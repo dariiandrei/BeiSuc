@@ -2,6 +2,7 @@ import io
 import time
 import threading
 import picamera
+import numpy as np
 
 class ImageProcessor(threading.Thread):
     def __init__(self, owner):
@@ -20,9 +21,7 @@ class ImageProcessor(threading.Thread):
                 try:
                     self.stream.seek(0)
                     # Read the image and do some processing on it
-                    #Image.open(self.stream)
-                    #...
-                    print('wow')
+
                     # Set done to True if you want the script to terminate
                     # at some point
                     #self.owner.done=True
