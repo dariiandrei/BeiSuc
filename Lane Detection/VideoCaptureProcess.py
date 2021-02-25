@@ -14,7 +14,7 @@ class ImageProcessor(threading.Thread):
         self.start()
 
     def run(self):
-        # This method runs in a separate thread
+        # This method runs in a separate thread s
         while not self.terminated:
             # Wait for an image to be written to the stream
             if self.event.wait(1.0):
