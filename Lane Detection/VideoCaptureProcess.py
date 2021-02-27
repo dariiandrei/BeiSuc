@@ -3,6 +3,7 @@ import time
 import threading
 import picamera
 import numpy as np
+import cv2
 
 class ImageProcessor(threading.Thread):
     def __init__(self, owner):
@@ -11,6 +12,9 @@ class ImageProcessor(threading.Thread):
         self.event = threading.Event()
         self.terminated = False
         self.owner = owner
+        self.array = np.empty((480*640*3), dtype=np.uint8)
+        self._name_list = (1, 2, 3, 4, 5, 6, 7, 8, 9)
+        self._name_iter = iter(self._name_list)
         self.start()
 
     def run(self):
@@ -19,9 +23,21 @@ class ImageProcessor(threading.Thread):
             # Wait for an image to be written to the stream
             if self.event.wait(1.0):
                 try:
+                    start = time.perf_counter()
                     self.stream.seek(0)
                     # Read the image and do some processing on it
-
+                    self.array = np.frombuffer(self.stream.getvalue(), dtype=np.uint8)
+                    self.img_gray = cv2.imdecode(self.array, cv2.IMREAD_GRAYSCALE)
+                    
+                    
+                    
+                    try:
+                        end = time.perf_counter()
+                        timer = end - start
+                        print(f'{self.name} - {timer:.4f}')
+                    except StopIteration:
+                        self.owner.done = True
+                        
                     # Set done to True if you want the script to terminate
                     # at some point
                     #self.owner.done=True
@@ -53,9 +69,7 @@ class ProcessOutput(object):
                 if self.pool:
                     self.processor = self.pool.pop()
                 else:
-                    # No processor's available, we'll have to skip
-                    # this frame; you may want to print a warning
-                    # here to see whether you hit this case
+                    print("Awolo: Frame not processed")
                     self.processor = None
         if self.processor:
             self.processor.stream.write(buf)
@@ -74,11 +88,11 @@ class ProcessOutput(object):
                 try:
                     proc = self.pool.pop()
                 except IndexError:
-                    pass # pool is empty
+                    break # pool is empty
             proc.terminated = True
             proc.join()
 
-with picamera.PiCamera(resolution='VGA') as camera:
+with picamera.PiCamera(resolution=(640, 480), framerate=30) as camera:
     camera.start_preview()
     time.sleep(2)
     output = ProcessOutput()
